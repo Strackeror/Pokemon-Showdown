@@ -4,6 +4,128 @@
 // The rules that formats use are stored in data/rulesets.js
 
 exports.Formats = [
+	{
+		section: "Custom formats"
+	},
+	{
+		name: "[Gen 7] UTA",
+		searchShow: false,
+		challengeShow: false,
+		team: 'random',
+		rated: false,
+		desc: [
+			"&bullet; <a href=\"https://strategydatabase.jimdo.com/uta/\">Règles du Use Them All</a>",
+			"&bullet; <a href=\"https://enigmatic-tor-64204.herokuapp.com/\">Rangs des Pokémons</a>",
+		],
+
+		mod: 'gen7',
+		ruleset: ['Pokemon', 'Standard', 'Team Preview'],
+		banlist: ['Unreleased', 'Illegal'],
+	},
+	{
+		name: "[Gen 7] Use them all",
+		desc: [
+			"&bullet; <a href=\"https://strategydatabase.jimdo.com/uta/\">Règles du Use Them All</a>",
+			"&bullet; <a href=\"https://enigmatic-tor-64204.herokuapp.com/\">Rangs des Pokémons</a>",
+		],
+
+		mod: 'gen7',
+		ruleset: ['Pokemon', 'Standard', 'Team Preview'],
+		banlist: ['Unreleased', 'Illegal'],
+
+		onValidateTeam: function (team) {
+			let ranks = [false, false, false, false, false, false];
+			let tiers = ["S", "A", "B", "C", "D", "E"];
+			for (const set of team) {
+				let output = ""
+				let template = this.getTemplate(set.species);
+				let item = this.getItem(set.item);
+				if (item.megaStone && template.species === item.megaEvolves)
+					template = this.getTemplate(item.megaStone);
+				let setrank = template.utarank
+				if (setrank == "BAN")
+					return `${(set.name || set.species)} is banned.`
+
+				let first = 0;
+				for (let tier of tiers) {
+					if (tier == setrank) {
+						break;
+					}
+					first += 1;
+				}
+
+				let slot = first;
+				while (slot >= 0) {
+					if (ranks[slot] == false) {
+						ranks[slot] = set;
+						break;
+					}
+					slot--
+				}
+
+				if (slot < 0) {
+					let ranknames = ["S", "A", "B", "C", "D", "E"];
+					let tranks = []
+					tranks.push("No slot for " + (set.name || set.species) + `(${setrank})`);
+					for (let i = 0; i < 6; i++) {
+						tranks.push(ranknames[i] + ":" + (ranks[i] ? (ranks[i].name || ranks[i].species) : "None"));
+					}
+					tranks.push(output);
+					return tranks;
+
+				}
+			}
+		},
+
+		onValidateSet: function (set, format, setHas) {
+			let item = this.getItem(set.item);
+			if (!('batonpass' in setHas)) {
+
+				// check if Speed is boosted
+				let speedBoosted = false;
+				if (toId(set.item) === 'eeviumz') {
+					speedBoosted = true;
+				}
+				for (let i = 0; i < set.moves.length; i++) {
+					let move = this.getMove(set.moves[i]);
+					if (move.boosts && move.boosts.spe > 0) {
+						speedBoosted = true;
+					}
+					if (item.zMove && move.type === item.zMoveType) {
+						if (move.zMoveBoost && move.zMoveBoost.spe > 0) {
+							if (!speedBoosted) speedBoosted = move.name;
+						}
+					}
+				}
+
+				let boostSpeed = ['flamecharge', 'geomancy', 'motordrive', 'rattled', 'speedboost', 'steadfast', 'weakarmor', 'blazikenite', 'salacberry'];
+				if (!speedBoosted) {
+					for (let i = 0; i < boostSpeed.length; i++) {
+						if (boostSpeed[i] in setHas) {
+							speedBoosted = true;
+							break;
+						}
+					}
+				}
+				if (speedBoosted) {
+					return [(set.name || set.species) + " can Baton Pass speed, which is banned."];
+				}
+			}
+
+			let template = this.getTemplate(set.species)
+			let mtemplate = null
+			if (item.megaStone && template.species === item.megaEvolves) {
+				mtemplate = this.getTemplate(item.megaStone);
+			}
+			if (set.ability == "Shadow Tag" || mtemplate && mtemplate.abilities[0] == "Shadow Tag") {
+				for (let move of set.moves) {
+					if (this.getMove(move).flags.heal) {
+						return [(set.name || set.species) + " can heal while having Shadow Tag"];
+					}
+				}
+			}
+		}
+	},
 
 	// US/UM Singles
 	///////////////////////////////////////////////////////////////////

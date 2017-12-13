@@ -7024,3 +7024,8 @@ exports.BattleFormatsData = {
 		tier: "Illegal",
 	},
 };
+
+let utaranks = require('./uta-data')
+for (let rank in utaranks.ranks) {
+	exports.BattleFormatsData[rank].utarank = utaranks.ranks[rank].utarank;
+}
