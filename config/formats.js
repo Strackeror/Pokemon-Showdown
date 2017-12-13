@@ -23,7 +23,7 @@ exports.Formats = [
 		banlist: ['Unreleased', 'Illegal'],
 	},
 	{
-		name: "[Gen 7] Use them all",
+		name: "[Gen 7] Use Them All",
 		desc: [
 			"&bullet; <a href=\"https://strategydatabase.jimdo.com/uta/\">Règles du Use Them All</a>",
 			"&bullet; <a href=\"https://enigmatic-tor-64204.herokuapp.com/\">Rangs des Pokémons</a>",
