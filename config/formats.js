@@ -5,7 +5,7 @@
 
 exports.Formats = [
 	{
-		section: "Custom formats"
+		section: "Salty formats"
 	},
 	{
 		name: "[Gen 7] UTA",
@@ -452,7 +452,7 @@ exports.Formats = [
 
 	{
 		section: "Past Gens OU",
-		column: 2,
+		column: 3,
 	},
 	{
 		name: "[Gen 6] OU",
