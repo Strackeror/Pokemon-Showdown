@@ -1,4 +1,5 @@
 'use strict';
+
 exports.ranks = {
     charizardmegax: { utarank: "S", },
     charizardmegay: { utarank: "S", },
