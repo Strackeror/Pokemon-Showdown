@@ -77,7 +77,15 @@ exports.Formats = [
 			}
 		},
 
+		onDisableMove: function (pokemon) {
+			if (pokemon.boosts["spe"] > 0)
+			{
+				pokemon.disableMove('batonpass');
+			}
+		},
+
 		onValidateSet: function (set, format, setHas) {
+			let item = set.item
 			let template = this.getTemplate(set.species)
 			let mtemplate = null
 			if (item.megaStone && template.species === item.megaEvolves) {
