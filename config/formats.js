@@ -78,40 +78,6 @@ exports.Formats = [
 		},
 
 		onValidateSet: function (set, format, setHas) {
-			let item = this.getItem(set.item);
-			if (!('batonpass' in setHas)) {
-
-				// check if Speed is boosted
-				let speedBoosted = false;
-				if (toId(set.item) === 'eeviumz') {
-					speedBoosted = true;
-				}
-				for (let i = 0; i < set.moves.length; i++) {
-					let move = this.getMove(set.moves[i]);
-					if (move.boosts && move.boosts.spe > 0) {
-						speedBoosted = true;
-					}
-					if (item.zMove && move.type === item.zMoveType) {
-						if (move.zMoveBoost && move.zMoveBoost.spe > 0) {
-							if (!speedBoosted) speedBoosted = move.name;
-						}
-					}
-				}
-
-				let boostSpeed = ['flamecharge', 'geomancy', 'motordrive', 'rattled', 'speedboost', 'steadfast', 'weakarmor', 'blazikenite', 'salacberry'];
-				if (!speedBoosted) {
-					for (let i = 0; i < boostSpeed.length; i++) {
-						if (boostSpeed[i] in setHas) {
-							speedBoosted = true;
-							break;
-						}
-					}
-				}
-				if (speedBoosted) {
-					return [(set.name || set.species) + " can Baton Pass speed, which is banned."];
-				}
-			}
-
 			let template = this.getTemplate(set.species)
 			let mtemplate = null
 			if (item.megaStone && template.species === item.megaEvolves) {
