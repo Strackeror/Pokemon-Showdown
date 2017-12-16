@@ -31,7 +31,7 @@ exports.Formats = [
 
 		mod: 'gen7',
 		ruleset: ['Pokemon', 'Standard', 'Team Preview'],
-		banlist: ['Unreleased', 'Illegal'],
+		banlist: ['Unreleased', 'Illegal', 'Power Construct'],
 
 		onValidateTeam: function (team) {
 			let ranks = [false, false, false, false, false, false];
