@@ -476,6 +476,9 @@ exports.commands = {
 				} else {
 					details["Evolution"] = evos.join(", ");
 				}
+				if (pokemon.utarank) {
+					details["UTA Rank"] = pokemon.utarank;
+				}
 			} else if (newTargets[0].searchType === 'move') {
 				let move = mod.getMove(newTargets[0].name);
 				details = {
