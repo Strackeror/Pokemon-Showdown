@@ -130,7 +130,7 @@ exports.ranks = {
     kyurem: { utarank: "B", },
     diggersby: { utarank: "B", },
     sylveon: { utarank: "B", },
-    hawlucha: { utarank: "B", },
+    hawlucha: { utarank: "A", },
     zygarde10: { utarank: "B", },
     diancie: { utarank: "B", },
     ribombee: { utarank: "B", },
