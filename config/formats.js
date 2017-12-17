@@ -5,7 +5,7 @@
 
 exports.Formats = [
 	{
-		section: "Salty formats"
+		section: "Salty Formats"
 	},
 	{
 		name: "[Gen 7] UTA",
