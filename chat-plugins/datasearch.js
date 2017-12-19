@@ -356,6 +356,7 @@ if (process.send && module === process.mainModule) {
 function runDexsearch(target, cmd, canAll, message) {
 	let searches = [];
 	let allTiers = {'uber': 'Uber', 'ubers': 'Uber', 'ou': 'OU', 'bl': 'BL', 'uu': 'UU', 'bl2': 'BL2', 'ru': 'RU', 'bl3': 'BL3', 'nu': 'NU', 'bl4': 'BL4', 'pu': 'PU', 'nfe': 'NFE', 'lcuber': 'LC Uber', 'lcubers': 'LC Uber', 'lc': 'LC', 'cap': 'CAP', 'caplc': 'CAP LC', 'capnfe': 'CAP NFE', __proto__: null};
+	let allRanks = ["s", "a", "b", "c", "d", "e"]
 	let allTypes = Object.create(null);
 	for (let i in Dex.data.TypeChart) {
 		allTypes[toId(i)] = i;
@@ -392,7 +393,7 @@ function runDexsearch(target, cmd, canAll, message) {
 
 	let andGroups = target.split(',');
 	for (let i = 0; i < andGroups.length; i++) {
-		let orGroup = {abilities: {}, tiers: {}, colors: {}, 'egg groups': {}, gens: {}, moves: {}, types: {}, resists: {}, stats: {}, skip: false};
+		let orGroup = {abilities: {}, tiers: {}, colors: {}, 'egg groups': {}, gens: {}, moves: {}, types: {}, utaranks:{}, resists: {}, stats: {}, skip: false};
 		let parameters = andGroups[i].split("|");
 		if (parameters.length > 3) return {reply: "No more than 3 alternatives for each parameter may be used."};
 		for (let j = 0; j < parameters.length; j++) {
@@ -421,6 +422,14 @@ function runDexsearch(target, cmd, canAll, message) {
 				if (invalid) return {reply: invalid};
 				orGroup.tiers[target] = !isNotSearch;
 				continue;
+			}
+
+			if (allRanks.includes(target)){
+				target = target.toUpperCase();
+				let invalid = validParameter("utarank", target, isNotSearch, target);
+				if (invalid) return {reply: invalid};
+				orGroup.utaranks[target] = !isNotSearch;
+				continue
 			}
 
 			if (allColors.includes(target)) {
@@ -687,6 +696,12 @@ function runDexsearch(target, cmd, canAll, message) {
 				if (Object.values(alts.tiers).includes(false) && alts.tiers[tier] !== false) continue;
 				// some LC Pokemon are also in other tiers and need to be handled separately
 				if (alts.tiers.LC && !dex[mon].prevo && dex[mon].nfe && !Dex.formats.gen7lc.banlist.includes(dex[mon].species)) continue;
+			}
+			
+			if (alts.utaranks && Object.keys(alts.utaranks).length) {
+				let utarank = dex[mon].utarank
+				if (alts.utaranks[utarank]) continue;
+				if (Object.values(alts.utaranks).includes(false) && alts.utaranks[utarank] !== false) continue;
 			}
 
 			for (let type in alts.types) {
@@ -1584,6 +1599,7 @@ function runLearn(target, cmd) {
 function runSearch(query) {
 	return PM.send(query);
 }
+
 
 if (!process.send) {
 	PM.spawn();
