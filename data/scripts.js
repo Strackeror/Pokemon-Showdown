@@ -529,6 +529,9 @@ exports.BattleScripts = {
 				damage = (moveDamage || 0);
 				// Total damage dealt is accumulated for the purposes of recoil (Parental Bond).
 				move.totalDamage += damage;
+				if (move.mindBlownRecoil && i === 0) {
+					this.damage(Math.round(pokemon.maxhp / 2), pokemon, pokemon, this.getEffect('Mind Blown'), true);
+				}
 				this.eachEvent('Update');
 			}
 			if (i === 0) return false;
@@ -897,7 +900,7 @@ exports.BattleScripts = {
 	},
 
 	runMegaEvo: function (pokemon) {
-		const isUltraBurst = !pokemon.canMegaEvo;
+		const effectType = pokemon.canMegaEvo ? '-mega' : '-burst';
 		const template = this.getTemplate(pokemon.canMegaEvo || pokemon.canUltraBurst);
 		const side = pokemon.side;
 
@@ -913,21 +916,17 @@ exports.BattleScripts = {
 		pokemon.details = template.species + (pokemon.level === 100 ? '' : ', L' + pokemon.level) + (pokemon.gender === '' ? '' : ', ' + pokemon.gender) + (pokemon.set.shiny ? ', shiny' : '');
 		if (pokemon.illusion) {
 			pokemon.ability = ''; // Don't allow Illusion to wear off
-			this.add(isUltraBurst ? '-burst' : '-mega', pokemon, pokemon.illusion.template.baseSpecies, template.requiredItem);
+			this.add(effectType, pokemon, pokemon.illusion.template.baseSpecies, template.requiredItem);
 		} else {
-			if (isUltraBurst) {
-				this.add('-burst', pokemon, template.baseSpecies, template.requiredItem);
-			} else {
-				this.add('-mega', pokemon, template.baseSpecies, template.requiredItem);
-			}
+			this.add(effectType, pokemon, template.baseSpecies, template.requiredItem);
 			this.add('detailschange', pokemon, pokemon.details);
 		}
-		pokemon.setAbility(template.abilities['0']);
+		pokemon.setAbility(template.abilities['0'], null, true);
 		pokemon.baseAbility = pokemon.ability;
 
 		// Limit one mega evolution
 		for (const ally of side.pokemon) {
-			if (isUltraBurst) {
+			if (effectType === '-burst') {
 				ally.canUltraBurst = null;
 			} else {
 				ally.canMegaEvo = null;

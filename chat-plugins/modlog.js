@@ -1,6 +1,6 @@
 'use strict';
 
-const FS = require('./../fs');
+const FS = require('./../lib/fs');
 const path = require('path');
 const Dashycode = require('../lib/dashycode');
 const ProcessManager = require('./../process-manager');
@@ -56,7 +56,7 @@ class ModlogManager extends ProcessManager {
 		try {
 			result = '1|' + await runModlog(rooms.split(','), searchString, exactSearch, maxLines);
 		} catch (err) {
-			require('../crashlogger')(err, 'A modlog query', {
+			require('../lib/crashlogger')(err, 'A modlog query', {
 				rooms: rooms,
 				searchString: searchString,
 				exactSearch: exactSearch,
@@ -80,14 +80,14 @@ if (process.send && module === process.mainModule) {
 	global.Config = require('../config/config');
 	process.on('uncaughtException', err => {
 		if (Config.crashguard) {
-			require('../crashlogger')(err, 'A modlog child process');
+			require('../lib/crashlogger')(err, 'A modlog child process');
 		}
 	});
 	global.Dex = require('../sim/dex');
 	global.toId = Dex.getId;
 	process.on('message', message => PM.onMessageDownstream(message));
 	process.on('disconnect', () => process.exit());
-	require('../repl').start('modlog', cmd => eval(cmd));
+	require('../lib/repl').start('modlog', cmd => eval(cmd));
 } else {
 	PM.spawn();
 }
@@ -339,11 +339,12 @@ function getModlog(connection, roomid = 'global', searchString = '', lines = 20,
 }
 
 exports.pages = {
-	modlog(args) {
+	modlog(args, user, connection) {
+		if (!user.named) return Rooms.RETRY_AFTER_LOGIN;
 		const roomid = args[0];
 		const target = Dashycode.decode(args.slice(1).join('-'));
 
-		getModlog(this.connection, roomid, target);
+		getModlog(connection, roomid, target);
 	},
 };
 
