@@ -27,9 +27,12 @@ const Roomlogs = require('./roomlogs');
  *********************************************************/
 
 /**
- * @typedef {{userid: string, time: number, guestNum: number, autoconfirmed: boolean}} MuteEntry
+ * @typedef {{userid: string, time: number, guestNum: number, autoconfirmed: string}} MuteEntry
  */
 
+/**
+ * @abstract
+ */
 class BasicRoom {
 	/**
 	 * @param {string} roomid
@@ -95,6 +98,7 @@ class BasicRoom {
 		/** @type {string?} */
 		this.modchat = null;
 		this.staffRoom = false;
+		/** @type {false | number} */
 		this.slowchat = false;
 		this.filterStretching = false;
 		this.filterEmojis = false;
@@ -136,7 +140,7 @@ class BasicRoom {
 	}
 	/**
 	 * Send a room message to a single user.
-	 * @param {User} user
+	 * @param {User | Connection} user
 	 * @param {string} message
 	 */
 	sendUser(user, message) {
@@ -169,7 +173,7 @@ class BasicRoom {
 	 * @param {string} text
 	 */
 	addByUser(user, text) {
-		return this.add('|c|' + user.getIdentity(this) + '|/log ' + text).update();
+		return this.add('|c|' + user.getIdentity(this.id) + '|/log ' + text).update();
 	}
 	/**
 	 * Like addByUser, but sends to mods only.
@@ -177,7 +181,7 @@ class BasicRoom {
 	 * @param {string} text
 	 */
 	sendModsByUser(user, text) {
-		return this.sendMods('|c|' + user.getIdentity(this) + '|/log ' + text);
+		return this.sendMods('|c|' + user.getIdentity(this.id) + '|/log ' + text);
 	}
 	update() {}
 
@@ -337,19 +341,17 @@ class BasicRoom {
 	unmute(userid, notifyText) {
 		let successUserid = '';
 		let user = Users.get(userid);
-		if (!user) {
-			// If the user is not found, construct a dummy user object for them.
-			user = {
-				userid: userid,
-				autoconfirmed: '',
-			};
+		let autoconfirmed = '';
+		if (user) {
+			userid = user.userid;
+			autoconfirmed = user.autoconfirmed;
 		}
 
 		for (let i = 0; i < this.muteQueue.length; i++) {
 			let entry = this.muteQueue[i];
-			if (entry.userid === user.userid ||
-				entry.guestNum === user.guestNum ||
-				(user.autoconfirmed && entry.autoconfirmed === user.autoconfirmed)) {
+			if (entry.userid === userid ||
+				(user && entry.guestNum === user.guestNum) ||
+				(autoconfirmed && entry.autoconfirmed === autoconfirmed)) {
 				if (i === 0) {
 					this.muteQueue.splice(0, 1);
 					this.runMuteTimer(true);
@@ -361,7 +363,7 @@ class BasicRoom {
 			}
 		}
 
-		if (successUserid && user.userid in this.users) {
+		if (user && successUserid && userid in this.users) {
 			user.updateIdentity(this.id);
 			if (notifyText) user.popup(notifyText);
 		}
@@ -451,7 +453,7 @@ class GlobalRoom extends BasicRoom {
 		} else {
 			// Prevent there from being two possible hidden classes an instance
 			// of GlobalRoom can have.
-			this.ladderIpLog = new (require('stream')).Writable();
+			this.ladderIpLog = new (require('./lib/streams')).WriteStream({write() {}});
 		}
 
 		let lastBattle;
@@ -480,7 +482,7 @@ class GlobalRoom extends BasicRoom {
 	 * @param {string} message
 	 */
 	modlog(message) {
-		this.modlogStream.write(message + '\n');
+		this.modlogStream.write('[' + (new Date().toJSON()) + '] ' + message + '\n');
 	}
 
 	writeChatRoomData() {
@@ -502,13 +504,13 @@ class GlobalRoom extends BasicRoom {
 			LoginServer.request('updateuserstats', {
 				date: this.maxUsersDate,
 				users: this.maxUsers,
-			}, () => {});
+			});
 			this.maxUsersDate = 0;
 		}
 		LoginServer.request('updateuserstats', {
 			date: Date.now(),
 			users: this.userCount,
-		}, () => {});
+		});
 	}
 
 	get formatListText() {
@@ -636,10 +638,10 @@ class GlobalRoom extends BasicRoom {
 		}
 		return roomsData;
 	}
-	checkModjoin() {
+	checkModjoin(/** @type {User} */ user) {
 		return true;
 	}
-	isMuted() {
+	isMuted(/** @type {User} */ user) {
 		return null;
 	}
 	/**
@@ -964,10 +966,10 @@ class BasicChatRoom extends BasicRoom {
 		if (options.logTimes === undefined) options.logTimes = true;
 		if (options.autoTruncate === undefined) options.autoTruncate = !options.isHelp;
 		if (options.reportJoins === undefined) {
-			options.reportJoins = !!Config.reportjoins || this.isPersonal;
+			options.reportJoins = !!Config.reportjoins || options.isPersonal;
 		}
 		if (options.batchJoins === undefined) {
-			options.batchJoins = this.isPersonal ? 0 : Config.reportjoinsperiod || 0;
+			options.batchJoins = options.isPersonal ? 0 : Config.reportjoinsperiod || 0;
 		}
 		this.log = Roomlogs.create(this, options);
 
@@ -981,11 +983,18 @@ class BasicChatRoom extends BasicRoom {
 		this.filterStretching = false;
 		this.filterEmojis = false;
 		this.filterCaps = false;
+		/** @type {false | number} */
 		this.slowchat = false;
 		this.introMessage = '';
 		this.staffMessage = '';
 		this.autojoin = false;
 		this.staffAutojoin = /** @type {string | boolean} */ (false);
+
+		/** @type {?true | RegExp} */
+		this.banwordRegex = null;
+		/** @type {string[]} */
+		this.banwords = [];
+
 		this.chatRoomData = (options.isPersonal ? null : options);
 		Object.assign(this, options);
 		if (this.auth) Object.setPrototypeOf(this.auth, null);
@@ -1091,9 +1100,11 @@ class BasicChatRoom extends BasicRoom {
 		this.pokeExpireTimer();
 	}
 	pokeExpireTimer() {
+		if (this.expireTimer) clearTimeout(this.expireTimer);
 		if ((this.isPersonal && !this.isHelp) || (this.isHelp && this.isHelp !== 'open')) {
-			if (this.expireTimer) clearTimeout(this.expireTimer);
 			this.expireTimer = setTimeout(() => this.expire(), TIMEOUT_INACTIVE_DEALLOCATE);
+		} else {
+			this.expireTimer = null;
 		}
 	}
 	expire() {
@@ -1257,6 +1268,7 @@ class BasicChatRoom extends BasicRoom {
 
 		// remove references to ourself
 		for (let i in this.users) {
+			// @ts-ignore
 			this.users[i].leaveRoom(this, null, true);
 			delete this.users[i];
 		}
@@ -1370,8 +1382,8 @@ class GameRoom extends BasicChatRoom {
 	 * @param {User} user
 	 */
 	getLogForUser(user) {
-		if (!(user in this.game.players)) return this.getLog();
-		return this.getLog(this.game.players[user].slotNum + 1);
+		if (!(user.userid in this.game.players)) return this.getLog();
+		return this.getLog(this.game.players[user.userid].slotNum + 1);
 	}
 	/**
 	 * @param {User?} excludeUser
@@ -1409,7 +1421,8 @@ class GameRoom extends BasicChatRoom {
 	 * @param {0 | 1} num
 	 */
 	getPlayer(num) {
-		return this.battle['p' + (num + 1)];
+		// @ts-ignore
+		return this.game['p' + (num + 1)];
 	}
 	/**
 	 * @param {User} user
@@ -1571,6 +1584,8 @@ let Rooms = Object.assign(getRoom, {
 	RoomGamePlayer: require('./room-game').RoomGamePlayer,
 
 	RETRY_AFTER_LOGIN,
+
+	Roomlogs: Roomlogs,
 
 	RoomBattle: require(roomBattleLoc).RoomBattle,
 	RoomBattlePlayer: require(roomBattleLoc).RoomBattlePlayer,

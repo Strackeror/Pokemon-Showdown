@@ -117,6 +117,16 @@ class Effect {
 		 */
 		this.isUnreleased = false;
 		/**
+		 * A shortened form of the description of this effect. Not all effects have this
+		 * @type {string}
+		 */
+		this.shortDesc = '';
+		/**
+		 * The full description for this effect
+		 * @type {string}
+		 */
+		this.desc = '';
+		/**
 		 * Is this item/move/ability/pokemon nonstandard? True for effects
 		 * that have no use in standard formats: made-up pokemon (CAP),
 		 * glitches (Missingno etc), and Pokestar pokemon.
@@ -362,6 +372,10 @@ class Format extends Effect {
 		 */
 		this.validateSet = this.validateSet;
 		/**
+		 * @type {((this: Validator, move: Move, template: Template, lsetData: PokemonSources, set: PokemonSet) => string | false)?}
+		 */
+		this.checkLearnset = this.checkLearnset;
+		/**
 		 * @type {((this: Validator, team: PokemonSet[], removeNicknames: boolean) => string[] | false)?}
 		 */
 		this.validateTeam = this.validateTeam;
@@ -585,7 +599,7 @@ class Template extends Effect {
 
 		/**
 		 * Abilities
-		 * @type {{0: string, 1?: string, H?: string}}
+		 * @type {{0: string, 1?: string, H?: string, S?: string}}
 		 */
 		this.abilities = this.abilities || {0: ""};
 
@@ -804,6 +818,12 @@ class Move extends Effect {
 		 * @type {number}
 		 */
 		this.basePower = this.basePower;
+
+		/**
+		 * Move base accuracy. True denotes a move that always hits
+		 * @type {true | number}
+		 */
+		this.accuracy = this.accuracy;
 
 		/**
 		 * Critical hit ratio. Defaults to 1.

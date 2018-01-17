@@ -60,13 +60,13 @@ class Roomlog {
 		/**
 		 * undefined = uninitialized,
 		 * null = disabled
-		 * @type {NodeJS.WritableStream? | undefined}
+		 * @type {WriteStream? | undefined}
 		 */
 		this.modlogStream = undefined;
 		/**
 		 * undefined = uninitialized,
 		 * null = disabled
-		 * @type {NodeJS.WritableStream? | undefined}
+		 * @type {WriteStream? | undefined}
 		 */
 		this.roomlogStream = undefined;
 
@@ -97,7 +97,7 @@ class Roomlog {
 		}
 		let textLog = log.join('\n') + '\n';
 		if (channel === 0) {
-			return textLog.replace(/\n\|choice\|\|\n/g, '').replace(/\n\|seed\|\n/g, '');
+			return textLog.replace(/\n\|choice\|\|\n/g, '\n').replace(/\n\|seed\|\n/g, '\n');
 		}
 		return textLog;
 	}
@@ -152,6 +152,7 @@ class Roomlog {
 			FS(link0).symlinkToSync(relpath); // intentionally a relative link
 			FS(link0).renameSync(basepath + 'today.txt');
 		} catch (e) {} // OS might not support symlinks or atomic rename
+		if (!Roomlogs.rollLogTimer) Roomlogs.rollLogs();
 	}
 	/**
 	 * @param {string} message
@@ -198,13 +199,18 @@ class Roomlog {
 		this.modlogStream.write('[' + (new Date().toJSON()) + '] ' + message + '\n');
 	}
 	static async rollLogs() {
+		if (Roomlogs.rollLogTimer === true) return;
+		if (Roomlogs.rollLogTimer) {
+			clearTimeout(Roomlogs.rollLogTimer);
+		}
+		Roomlogs.rollLogTimer = true;
 		for (const log of Roomlogs.roomlogs.values()) {
 			await log.setupRoomlogStream();
 		}
 		const time = Date.now();
 		const nextMidnight = new Date(time + 24 * 60 * 60 * 1000);
 		nextMidnight.setHours(0, 0, 1);
-		setTimeout(() => Roomlog.rollLogs(), nextMidnight.getTime() - time);
+		Roomlogs.rollLogTimer = setTimeout(() => Roomlog.rollLogs(), nextMidnight.getTime() - time);
 	}
 	truncate() {
 		if (!this.autoTruncate) return;
@@ -219,24 +225,19 @@ class Roomlog {
 			this.modlogStream = null;
 		}
 		if (this.modlogStream) {
-			promises.push(new Promise(resolve => {
-				// @ts-ignore https://github.com/DefinitelyTyped/DefinitelyTyped/pull/22077
-				this.modlogStream.end(resolve);
-				this.modlogStream = null;
-			}));
+			promises.push(this.modlogStream.end());
+			this.modlogStream = null;
 		}
 		if (this.roomlogStream) {
-			promises.push(new Promise(resolve => {
-				// @ts-ignore https://github.com/DefinitelyTyped/DefinitelyTyped/pull/22077
-				this.roomlogStream.end(resolve);
-				this.roomlogStream = null;
-			}));
+			promises.push(this.roomlogStream.end());
+			this.roomlogStream = null;
 		}
+		Roomlogs.roomlogs.delete(this.id);
 		return Promise.all(promises);
 	}
 }
 
-/** @type {Map<string, NodeJS.WritableStream>} */
+/** @type {Map<string, WriteStream>} */
 const sharedModlogs = new Map();
 
 /** @type {Map<string, Roomlog>} */
@@ -258,7 +259,10 @@ const Roomlogs = {
 	Roomlog,
 	roomlogs,
 	sharedModlogs,
-	/** @type {NodeJS.Timer?} */
+
+	rollLogs: Roomlog.rollLogs,
+
+	/** @type {NodeJS.Timer? | true} */
 	rollLogTimer: null,
 };
 
