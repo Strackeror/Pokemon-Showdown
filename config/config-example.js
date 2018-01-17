@@ -154,7 +154,7 @@ exports.monitorminpunishments = 3;
 //   Note that this requires punishmentmonitor to be enabled, and therefore requires the `monitorminpunishments`
 //   option to be set to a number greater than zero. If `monitorminpunishments` is set to a value greater than 3,
 //   the autolock will only apply to people who pass this threshold.
-exports.punishmentautolock = false;
+exports.punishmentautolock = true;
 
 // restrict sending links to autoconfirmed users only.
 //   If this is set to `true`, only autoconfirmed users can send links to either chatrooms or other users, except for staff members.
@@ -172,9 +172,9 @@ exports.restrictLinks = false;
 // chat modchat - default minimum group for speaking in chatrooms; changeable with /modchat
 exports.chatmodchat = false;
 // battle modchat - default minimum group for speaking in battles; changeable with /modchat
-exports.battlemodchat = false;
+exports.battlemodchat = true;
 // pm modchat - minimum group for PMing other users, challenging other users
-exports.pmmodchat = false;
+exports.pmmodchat = true;
 // ladder modchat - minimum group for laddering
 exports.laddermodchat = false;
 
