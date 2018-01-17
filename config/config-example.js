@@ -124,7 +124,7 @@ exports.disablebasicnamefilter = false;
 //   /hidejoins configuration for users.
 //   This feature can lag larger servers - turn this off if your server is
 //   getting more than 80 or so users.
-exports.reportjoins = true;
+exports.reportjoins = false;
 
 // report joins and leaves periodically - sends silent join and leave messages in batches
 //   This setting will only be effective if `reportjoins` is set to false, and users will
@@ -159,7 +159,7 @@ exports.punishmentautolock = true;
 // restrict sending links to autoconfirmed users only.
 //   If this is set to `true`, only autoconfirmed users can send links to either chatrooms or other users, except for staff members.
 //   This option can be used if your server has trouble with spammers mass PMing links to users, or trolls sending malicious links.
-exports.restrictLinks = false;
+exports.restrictLinks = true;
 
 // whitelist - prevent users below a certain group from doing things
 //   For the modchat settings, false will allow any user to participate, while a string
