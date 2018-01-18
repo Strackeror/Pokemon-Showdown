@@ -172,9 +172,9 @@ exports.restrictLinks = true;
 // chat modchat - default minimum group for speaking in chatrooms; changeable with /modchat
 exports.chatmodchat = false;
 // battle modchat - default minimum group for speaking in battles; changeable with /modchat
-exports.battlemodchat = true;
+exports.battlemodchat = autoconfirmed;
 // pm modchat - minimum group for PMing other users, challenging other users
-exports.pmmodchat = true;
+exports.pmmodchat = autoconfirmed;
 // ladder modchat - minimum group for laddering
 exports.laddermodchat = false;
 
