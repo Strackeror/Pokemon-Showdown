@@ -72,7 +72,7 @@ exports.ranks = {
     blastoisemega: { utarank: "B", },
     blaziken: { utarank: "BAN", },
     blazikenmega: { utarank: "BAN", },
-    blissey: { utarank: "B", },
+    blissey: { utarank: "A", },
     blitzle: { utarank: "E", },
     boldore: { utarank: "E", },
     bonsly: { utarank: "E", },
